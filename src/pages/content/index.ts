@@ -1,11 +1,8 @@
+import { fetchOptions } from "@src/storage";
+
 (async () => {
   const host = window.location.host;
-  let options;
-  try {
-    options = (await chrome.storage.local.get(["options"])).options ?? {};
-  } catch (e) {
-    options = {};
-  }
+  const options = await fetchOptions();
 
   const ignoredHosts = options.ignoredHosts ?? [];
   if (ignoredHosts.includes(host)) {

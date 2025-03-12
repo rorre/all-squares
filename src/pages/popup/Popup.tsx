@@ -1,4 +1,11 @@
+import { fetchOptions } from "@src/storage";
 import { useEffect, useState } from "react";
+
+async function currentTabHost() {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tabs[0].url) return "";
+  return new URL(tabs[0].url).host;
+}
 
 export default function Popup() {
   const [initialValue, setInitialValue] = useState<boolean | null>(null);
@@ -11,14 +18,7 @@ export default function Popup() {
     if (namespace === "local" && changes.options) {
       const options = changes.options.newValue;
       const ignoredHosts = options.ignoredHosts ?? [];
-
-      const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      if (!tabs[0].url) return;
-
-      const currentHost = new URL(tabs[0].url).host;
+      const currentHost = await currentTabHost();
 
       setIsIgnored(ignoredHosts.includes(currentHost));
     }
@@ -27,36 +27,23 @@ export default function Popup() {
   useEffect(() => {
     chrome.storage.onChanged.addListener(onStorageChange);
 
-    chrome.storage.local.get(["options"], async (options) => {
-      const ignoredHosts = options.options.ignoredHosts ?? [];
+    async function init() {
+      const options = await fetchOptions();
+      const ignoredHosts = options.ignoredHosts;
+      const currentHost = await currentTabHost();
 
-      const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      if (!tabs[0].url) return;
-
-      const currentHost = new URL(tabs[0].url).host;
       const isIgnored = ignoredHosts.includes(currentHost);
       setIsIgnored(isIgnored);
       setInitialValue(isIgnored);
-    });
+    }
 
+    init();
     return () => chrome.storage.onChanged.removeListener(onStorageChange);
   }, []);
 
   async function toggleIgnore() {
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tabs[0].url) return;
-
-    const currentHost = new URL(tabs[0].url).host;
-
-    let options;
-    try {
-      options = (await chrome.storage.local.get(["options"])).options ?? {};
-    } catch (e) {
-      options = {};
-    }
+    const currentHost = await currentTabHost();
+    const options = await fetchOptions();
 
     const ignoredHosts: string[] = options.ignoredHosts ?? [];
     const newIgnoredHosts = ignoredHosts.includes(currentHost)
