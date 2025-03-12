@@ -1,10 +1,12 @@
-import { fetchOptions } from "@src/storage";
+import { fetchOptions, Options } from "@src/storage";
 import { useEffect, useState } from "react";
+import { tabs, storage } from "webextension-polyfill";
+import type { Storage } from "webextension-polyfill";
 
 async function currentTabHost() {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tabs[0].url) return "";
-  return new URL(tabs[0].url).host;
+  const currentTab = await tabs.query({ active: true, currentWindow: true });
+  if (!currentTab[0].url) return "";
+  return new URL(currentTab[0].url).host;
 }
 
 export default function Popup() {
@@ -12,11 +14,11 @@ export default function Popup() {
   const [isIgnored, setIsIgnored] = useState(false);
 
   async function onStorageChange(
-    changes: { [key: string]: chrome.storage.StorageChange },
+    changes: { [key: string]: Storage.StorageChange },
     namespace: string
   ) {
     if (namespace === "local" && changes.options) {
-      const options = changes.options.newValue;
+      const options = changes.options.newValue as Options;
       const ignoredHosts = options.ignoredHosts ?? [];
       const currentHost = await currentTabHost();
 
@@ -25,7 +27,7 @@ export default function Popup() {
   }
 
   useEffect(() => {
-    chrome.storage.onChanged.addListener(onStorageChange);
+    storage.onChanged.addListener(onStorageChange);
 
     async function init() {
       const options = await fetchOptions();
@@ -38,7 +40,7 @@ export default function Popup() {
     }
 
     init();
-    return () => chrome.storage.onChanged.removeListener(onStorageChange);
+    return () => storage.onChanged.removeListener(onStorageChange);
   }, []);
 
   async function onRadiusChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -46,7 +48,7 @@ export default function Popup() {
     setRadius(value);
 
     const options = await fetchOptions();
-    chrome.storage.local.set({
+    storage.local.set({
       options: {
         ...options,
         radius: value,
@@ -63,7 +65,7 @@ export default function Popup() {
       ? ignoredHosts.filter((host) => host !== currentHost)
       : [...ignoredHosts, currentHost];
 
-    chrome.storage.local.set({
+    storage.local.set({
       options: {
         ...options,
         ignoredHosts: newIgnoredHosts,

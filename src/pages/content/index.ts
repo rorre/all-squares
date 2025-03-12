@@ -1,4 +1,5 @@
 import { fetchOptions, Options } from "@src/storage";
+import { storage } from "webextension-polyfill";
 
 let styleElem: HTMLStyleElement | null = null;
 
@@ -23,9 +24,9 @@ function writeOrUpdateStyle(radius: number) {
   writeOrUpdateStyle(options.radius);
 })();
 
-chrome.storage.onChanged.addListener(async (changes, namespace) => {
+storage.onChanged.addListener(async (changes, namespace) => {
   if (namespace === "local" && changes.options) {
-    const options: Options = changes.options.newValue;
+    const options = changes.options.newValue as Options;
     const ignoredHosts = options.ignoredHosts ?? [];
     const host = window.location.host;
 
