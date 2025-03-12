@@ -1,5 +1,6 @@
 export interface Options {
   ignoredHosts: string[];
+  radius: number;
 }
 
 export async function fetchOptions() {
@@ -12,6 +13,11 @@ export async function fetchOptions() {
 
   if (options.ignoredHosts === undefined) {
     options.ignoredHosts = [];
+    await chrome.storage.local.set({ options });
+  }
+
+  if (options.radius === undefined) {
+    options.radius = 0;
     await chrome.storage.local.set({ options });
   }
 

@@ -8,7 +8,7 @@ async function currentTabHost() {
 }
 
 export default function Popup() {
-  const [initialValue, setInitialValue] = useState<boolean | null>(null);
+  const [radius, setRadius] = useState(0);
   const [isIgnored, setIsIgnored] = useState(false);
 
   async function onStorageChange(
@@ -34,12 +34,25 @@ export default function Popup() {
 
       const isIgnored = ignoredHosts.includes(currentHost);
       setIsIgnored(isIgnored);
-      setInitialValue(isIgnored);
+      setRadius(options.radius);
     }
 
     init();
     return () => chrome.storage.onChanged.removeListener(onStorageChange);
   }, []);
+
+  async function onRadiusChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = +e.target.value;
+    setRadius(value);
+
+    const options = await fetchOptions();
+    chrome.storage.local.set({
+      options: {
+        ...options,
+        radius: value,
+      },
+    });
+  }
 
   async function toggleIgnore() {
     const currentHost = await currentTabHost();
@@ -64,27 +77,24 @@ export default function Popup() {
         <h1 className="text-xl font-bold">All Squares ⬛ ⬜</h1>
         <p>Running: {isIgnored ? "❌" : "✔"}</p>
 
+        <div className="flex flex-row gap-2 items-center">
+          <span>Set radius:</span>
+          <input
+            className="px-1 py-1 bg-gray-700 text-white rounded"
+            type="number"
+            value={radius}
+            onChange={onRadiusChange}
+            min={0}
+          />
+          <span>px</span>
+        </div>
+
         <button
           className="px-1.5 py-1 bg-blue-500 text-white rounded hover:cursor-pointer"
           onClick={toggleIgnore}
         >
           {isIgnored ? "Enable" : "Disable"} for this site
         </button>
-
-        {initialValue !== null && isIgnored !== initialValue && (
-          <>
-            <hr />
-            <p className="text-sm text-gray-400">
-              Reload the page to see changes.
-            </p>
-            <button
-              className="-mt-2 px-1.5 py-1 bg-blue-500 text-white rounded hover:cursor-pointer"
-              onClick={() => chrome.tabs.reload()}
-            >
-              Reload page
-            </button>
-          </>
-        )}
       </header>
     </div>
   );
