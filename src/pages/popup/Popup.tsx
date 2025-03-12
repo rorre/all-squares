@@ -80,7 +80,7 @@ export default function Popup() {
         <div className="flex flex-row gap-2 items-center">
           <span>Set radius:</span>
           <input
-            className="px-1 py-1 bg-gray-700 text-white rounded"
+            className="px-1 py-1 bg-gray-700 text-white"
             type="number"
             value={radius}
             onChange={onRadiusChange}
@@ -90,7 +90,7 @@ export default function Popup() {
         </div>
 
         <button
-          className="px-1.5 py-1 bg-blue-500 text-white rounded hover:cursor-pointer"
+          className="px-1.5 py-1 bg-blue-500 text-white hover:cursor-pointer"
           onClick={toggleIgnore}
         >
           {isIgnored ? "Enable" : "Disable"} for this site
